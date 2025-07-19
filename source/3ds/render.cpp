@@ -1,19 +1,23 @@
-#include "render.hpp"
+#include <citro3d.h>
+#include <citro2d.h>
 #include "interpret.hpp"
 #include "image.hpp"
+#include "render.hpp"
 #include "text.hpp"
 #include "spriteSheet.hpp"
 #include "../scratch/unzip.hpp"
 #include "../scratch/input.hpp"
 #include "../scratch/image.hpp"
 #include "../scratch/render.hpp"
+#include "../scratch/collision/collisionShapeFromImage.hpp"
+
 
 #define SCREEN_WIDTH 400
 #define BOTTOM_SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
 
 
-
+CollisionPoint debugPoints[COLLISION_POINT_COUNT*2];
 C3D_RenderTarget* topScreen = nullptr;
 C3D_RenderTarget* bottomScreen = nullptr;
 u32 clrWhite = C2D_Color32f(1,1,1,1);
@@ -39,7 +43,7 @@ void Render::Init(){
 	C2D_Prepare();
     topScreen = C2D_CreateScreenTarget(GFX_TOP,GFX_LEFT);
     bottomScreen = C2D_CreateScreenTarget(GFX_BOTTOM,GFX_LEFT);
-
+	consoleInit(GFX_BOTTOM, NULL);
     romfsInit();
 }
 
@@ -67,6 +71,11 @@ void renderImage(C2D_Image *image, Sprite* currentSprite, std::string costumeId,
                 if(imageC2Ds.find(costumeId) == imageC2Ds.end() || image->tex == nullptr || image->subtex == nullptr){
                 C2D_Image newImage = get_C2D_Image(rgba);
                 imageC2Ds[costumeId].image = newImage;
+                imageCollisions[costumeId] = CollisionShapeFromImageData(&newImage);
+                std::cout << "sprites we have:" << std::endl;
+                for (const auto& pair : imageCollisions) {
+                    std::cout << "Key: " << pair.first << std::endl;
+                }
 
                 if(currentSprite->lastCostumeId == "") return;
 
@@ -172,7 +181,10 @@ if (!legacyDrawing) {
     if(Input::mousePointer.isMoving)
     C2D_DrawRectSolid(Input::mousePointer.x + (screenWidth / 2), (Input::mousePointer.y * -1) + (SCREEN_HEIGHT * heightMultiplier) + screenOffset, 1, 5, 5, clrGreen);
 
-    currentSprite->lastCostumeId = costumeId;
+    for (int i = 0;i<COLLISION_POINT_COUNT*2;i++){
+        C2D_DrawRectSolid(debugPoints[i].x*scale + (screenWidth / 2), -debugPoints[i].y*scale + (SCREEN_HEIGHT * heightMultiplier) + screenOffset, 1, 2, 2, C2D_Color32f(i*5,0,0,1));
+    }
+      currentSprite->lastCostumeId = costumeId;
 }
 
 void Render::renderSprites(){

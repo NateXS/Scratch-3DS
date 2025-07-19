@@ -10,6 +10,7 @@ using u32 = uint32_t;
 using u8 = uint8_t;
 
 std::unordered_map<std::string, ImageData> imageC2Ds;
+std::unordered_map<std::string, CollisionShape> imageCollisions;
 std::vector<Image::ImageRGBA> Image::imageRGBAS;
 static std::vector<std::string> toDelete;
 

@@ -1,6 +1,11 @@
 #include "sensing.hpp"
 #include "../input.hpp"
 #include "../keyboard.hpp"
+#include "../collision/collisionShape.hpp"
+#include "image.hpp"
+#include "../render.hpp"
+#include "../scratch/collision/collisionShapeFromImage.hpp"
+
 
 BlockResult SensingBlocks::resetTimer(Block& block, Sprite* sprite, Block** waitingBlock, bool* withoutScreenRefresh) {
     BlockExecutor::timer = std::chrono::high_resolution_clock::now();
@@ -189,27 +194,36 @@ Value SensingBlocks::touchingObject(Block& block, Sprite* sprite){
     for (Sprite* targetSprite : sprites) {
         if (targetSprite->name == objectName && targetSprite->visible) {
             // Get collision points of the target sprite
-            std::vector<std::pair<double, double>> targetSpritePoints = getCollisionPoints(targetSprite);
-
-            // Check if any point of the current sprite is inside the target sprite's bounds
-            for (const auto& point : currentSpritePoints) {
-                if (point.first >= targetSprite->xPosition - targetSprite->spriteWidth / 2 &&
-                    point.first <= targetSprite->xPosition + targetSprite->spriteWidth / 2 &&
-                    point.second >= targetSprite->yPosition - targetSprite->spriteHeight / 2 &&
-                    point.second <= targetSprite->yPosition + targetSprite->spriteHeight / 2) {
-                    return Value(true);
+            // std::vector<std::pair<double, double>> targetSpritePoints = getCollisionPoints(targetSprite);
+            CollisionShape myCollider;
+            CollisionShape targetCollider;
+            int costumeIndex = 0;
+            for(const auto& costume : sprite->costumes) {
+                if(costumeIndex == sprite->currentCostume) {
+                        // myCollider = CollisionShapeFromImageData(&imageC2Ds[costume.id].image);
+                        myCollider = imageCollisions[costume.id];
+                        // std::cout << "costume: " << costume.id << std::endl;
+                    break;
                 }
+                costumeIndex++;
+            }
+            costumeIndex = 0;
+            for(const auto& costume : targetSprite->costumes) {
+                if(costumeIndex == targetSprite->currentCostume) {
+                        targetCollider = imageCollisions[costume.id];
+                    break;
+                }
+                costumeIndex++;
             }
 
-            // Check if any point of the target sprite is inside the current sprite's bounds
-            for (const auto& point : targetSpritePoints) {
-                if (point.first >= sprite->xPosition - sprite->spriteWidth / 2 &&
-                    point.first <= sprite->xPosition + sprite->spriteWidth / 2 &&
-                    point.second >= sprite->yPosition - sprite->spriteHeight / 2 &&
-                    point.second <= sprite->yPosition + sprite->spriteHeight / 2) {
-                    return Value(true);
-                }
+            myCollider.SetCollision(sprite->xPosition,sprite->yPosition,-sprite->rotation/57.2958,sprite->size*0.01);
+            targetCollider.SetCollision(targetSprite->xPosition,targetSprite->yPosition,-targetSprite->rotation/57.2958,targetSprite->size*0.01);
+
+            for (int i = 0;i<COLLISION_POINT_COUNT;i++){
+                debugPoints[i] = myCollider.points[i];
+                debugPoints[i+COLLISION_POINT_COUNT] = targetCollider.points[i];
             }
+            return Value(myCollider.CheckCollision(targetCollider));
         }
     }
     return Value(false);

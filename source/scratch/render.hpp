@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <cmath>
+#include "../scratch/collision/collisionShape.hpp"
+extern CollisionPoint debugPoints[COLLISION_POINT_COUNT*2];
 
 class Render{
 public:
