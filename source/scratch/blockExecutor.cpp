@@ -59,6 +59,14 @@ void BlockExecutor::registerHandlers() {
     valueHandlers[Block::LOOKS_BACKDROPNUMBERNAME] = LooksBlocks::backdropNumberName;
 
     // sound
+    handlers[Block::SOUND_PLAY] = SoundBlocks::playSound;
+    handlers[Block::SOUND_PLAY_UNTIL_DONE] = SoundBlocks::playSoundUntilDone;
+    handlers[Block::SOUND_STOP_ALL_SOUNDS] = SoundBlocks::stopAllSounds;
+    handlers[Block::SOUND_CHANGE_EFFECT_BY] = SoundBlocks::changeEffectBy;
+    handlers[Block::SOUND_SET_EFFECT_TO] = SoundBlocks::setEffectTo;
+    handlers[Block::SOUND_CLEAR_EFFECTS] = SoundBlocks::clearSoundEffects;
+    handlers[Block::SOUND_CHANGE_VOLUME_BY] = SoundBlocks::changeVolumeBy;
+    handlers[Block::SOUND_SET_VOLUME_TO] = SoundBlocks::setVolumeTo;
     valueHandlers[Block::SOUND_VOLUME] = SoundBlocks::volume;
 
     // events

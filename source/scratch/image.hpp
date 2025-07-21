@@ -18,11 +18,16 @@ class Image {
         unsigned char *data;
     };
 
-    /**
+     /**
      * `3DS`: Takes every Image in a Scratch sb3 file and converts them to RGBA data.
      * `SDL`: Takes every image in a Scratch sb3 file and turns it into an 'SDL_Image' object.
      */
-    static void loadImages(mz_zip_archive *zip);
+    static void loadAllImages(mz_zip_archive *zip);
+  
+    /**
+    * `SDL`: Loads an image in a Scratch sb3 file with a specified costumeId.
+    */
+    static bool loadImageFromCostume(mz_zip_archive *zip, const std::string& costumeId);
 
     /**
      * `3DS`: Turns a single image from an unzipped Scratch project into RGBA data.

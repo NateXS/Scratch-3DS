@@ -25,9 +25,9 @@ APP_DESCRIPTION := Play Scratch Games on the 3DS! [Beta 7]
 APP_AUTHOR 	:= NateXS
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	source source/3ds source/scratch source/scratch/blocks include/miniz
+SOURCES		:=	source source/sdl source/scratch source/scratch/blocks include/miniz
 DATA		:=	data
-INCLUDES	:=	include source/3ds source/scratch source/scratch/blocks
+INCLUDES	:=	include source/sdl source/scratch source/scratch/blocks
 GRAPHICS	:=	gfx
 #GFXBUILD	:=	$(BUILD)/gfx
 ROMFS		:=	romfs
@@ -50,13 +50,13 @@ CXXFLAGS	:= $(CFLAGS) -fno-rtti -Wno-psabi -std=c++17 -fexceptions
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -lcitro2d -lcitro3d -lctru -lm
+LIBS	:= -lSDL2main -lSDL2_mixer -lSDL2 -lSDL2_image -lSDL2_ttf  -lcitro2d -lcitro3d -lctru  -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:= $(CTRULIB)
+LIBDIRS	:= $(CTRULIB) /opt/devkitpro/portlibs/3ds
 
 
 #---------------------------------------------------------------------------------

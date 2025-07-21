@@ -6,11 +6,7 @@
 std::vector<Image::ImageRGBA> Image::imageRGBAS;
 std::unordered_map<std::string, SDL_Image *> images;
 
-/**
- * Takes every image in a Scratch sb3 file and turns it into an 'SDL_Image' object.
- * @param zip
- */
-void Image::loadImages(mz_zip_archive *zip) {
+void Image::loadAllImages(mz_zip_archive *zip) {
     std::cout << "Loading images..." << std::endl;
     int file_count = (int)mz_zip_reader_get_num_files(zip);
 
@@ -71,12 +67,114 @@ void Image::loadImages(mz_zip_archive *zip) {
     }
 }
 
+bool Image::loadImageFromCostume(mz_zip_archive *zip, const std::string &costumeId) {
+    if (!zip) {
+        std::cout << "Error: Zip archive is null" << std::endl;
+        return false;
+    }
+
+    std::cout << "Loading image: '" << costumeId << "'" << std::endl;
+
+    int file_count = (int)mz_zip_reader_get_num_files(zip);
+    if (file_count <= 0) {
+        std::cout << "Error: No files found in zip archive" << std::endl;
+        return false;
+    }
+
+    for (int i = 0; i < file_count; i++) {
+        mz_zip_archive_file_stat file_stat;
+        if (!mz_zip_reader_file_stat(zip, i, &file_stat)) continue;
+
+        std::string zipFileName = file_stat.m_filename;
+
+        // Check if file is an image (PNG, JPG, JPEG, SVG)
+        bool isImage = false;
+        std::string extension = "";
+
+        if (zipFileName.size() >= 4) {
+            std::string ext4 = zipFileName.substr(zipFileName.size() - 4);
+            std::string ext5 = zipFileName.size() >= 5 ? zipFileName.substr(zipFileName.size() - 5) : "";
+
+            if (ext4 == ".png" || ext4 == ".PNG" ||
+                ext4 == ".jpg" || ext4 == ".JPG") {
+                isImage = true;
+                extension = ext4;
+            } else if (ext5 == ".jpeg" || ext5 == ".JPEG") {
+                isImage = true;
+                extension = ext5;
+            }
+        }
+
+        if (isImage) {
+
+            // Strip extension from filename to get the ID
+            std::string imageId = zipFileName.substr(0, zipFileName.size() - extension.length());
+
+            // Check if this matches the requested costumeId
+            if (imageId != costumeId) {
+                continue; // Skip this file, it's not the one we want
+            }
+
+            size_t file_size;
+            void *file_data = mz_zip_reader_extract_to_heap(zip, i, &file_size, 0);
+            if (!file_data || file_size == 0) {
+                std::cout << "Failed to extract: " << zipFileName << std::endl;
+                return false;
+            }
+
+            // Use SDL_RWops to load image from memory
+            SDL_RWops *rw = SDL_RWFromMem(file_data, (int)file_size);
+            if (!rw) {
+                std::cout << "Failed to create RWops for: " << zipFileName << std::endl;
+                mz_free(file_data);
+                return false;
+            }
+
+            SDL_Surface *surface = IMG_Load_RW(rw, 0);
+            SDL_RWclose(rw);
+            mz_free(file_data);
+
+            if (!surface) {
+                std::cout << "Failed to load image from memory: " << zipFileName << " - SDL_Image Error: " << IMG_GetError() << std::endl;
+                return false;
+            }
+
+            SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+            if (!texture) {
+                std::cout << "Failed to create texture: " << zipFileName << " - SDL Error: " << SDL_GetError() << std::endl;
+                SDL_FreeSurface(surface);
+                return false;
+            }
+
+            SDL_FreeSurface(surface);
+
+            // Build SDL_Image object
+            SDL_Image *image = new SDL_Image();
+            image->spriteTexture = texture;
+            SDL_QueryTexture(texture, nullptr, nullptr, &image->width, &image->height);
+            image->renderRect = {0, 0, image->width, image->height};
+            image->textureRect = {0, 0, image->width, image->height};
+
+            // Store the image with the costumeId as the key
+            images[costumeId] = image;
+
+            std::cout << "Loaded image: " << costumeId << std::endl;
+            return true; // Successfully loaded the target image
+        }
+    }
+
+    // If we get here, the image wasn't found
+    std::cout << "Image not found: " << costumeId << std::endl;
+    return false;
+}
+
 /**
  * Loads a single `SDL_Image` from an unzipped filepath .
  * @param filePath
  */
 void Image::loadImageFromFile(std::string filePath) {
     SDL_Image *image = new SDL_Image(filePath);
+
     images[filePath] = image;
 }
 /**

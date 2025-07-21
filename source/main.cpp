@@ -12,12 +12,15 @@ static void exitApp() {
     Render::deInit();
 }
 
-static void initApp() {
-    Render::Init();
+static bool initApp() {
+    return Render::Init();
 }
 
 int main(int argc, char **argv) {
-    initApp();
+    if (!initApp()) {
+        exitApp();
+        return 0;
+    }
 
     // this is for the FPS
     std::chrono::_V2::system_clock::time_point startTime = std::chrono::high_resolution_clock::now();

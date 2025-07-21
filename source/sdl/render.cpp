@@ -1,4 +1,7 @@
 #include "../scratch/render.hpp"
+#include "../scratch/audio.hpp"
+#include "../scratch/unzip.hpp"
+#include "image.hpp"
 #include "interpret.hpp"
 #include "render.hpp"
 int windowWidth = 480;
@@ -8,21 +11,31 @@ SDL_Renderer *renderer = nullptr;
 
 Render::RenderModes Render::renderMode = Render::TOP_SCREEN_ONLY;
 
-void Render::Init() {
+bool Render::Init() {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER);
     IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG);
-    window = SDL_CreateWindow("Scratch Runtime", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    // Initialize SDL_mixer
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        std::cout << "SDL_mixer could not initialize! SDL_mixer Error: " << Mix_GetError() << std::endl;
+        return false;
+    }
+    int flags = MIX_INIT_MP3 | MIX_INIT_OGG;
+    if (Mix_Init(flags) != flags) {
+        std::cout << "SDL_mixer could not initialize MP3/OGG support! SDL_mixer Error: " << Mix_GetError() << std::endl;
+    }
+    window = SDL_CreateWindow("Scratch Runtime", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_SHOWN);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+    return true;
 }
 void Render::deInit() {
+    SoundPlayer::cleanupAudio();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     IMG_Quit();
     SDL_Quit();
 }
+
 void Render::renderSprites() {
-    SDL_GetWindowSizeInPixels(window, &windowWidth, &windowHeight);
-    // SDL_SetWindowSize(window,Scratch::projectWidth,Scratch::projectHeight);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);
 
@@ -41,11 +54,21 @@ void Render::renderSprites() {
     for (Sprite *currentSprite : spritesByLayer) {
         if (!currentSprite->visible) continue;
 
-        bool legacyDrawing = false;
-        auto imgFind = images.find(currentSprite->costumes[currentSprite->currentCostume].id);
+        bool legacyDrawing = true;
+        std::string costumeId = currentSprite->costumes[currentSprite->currentCostume].id;
+        auto imgFind = images.find(costumeId);
         if (imgFind == images.end()) {
-            legacyDrawing = true;
+            if (Image::loadImageFromCostume(&Unzip::zipArchive, costumeId)) {
+                // Re-find the image after loading it
+                imgFind = images.find(costumeId);
+                if (imgFind != images.end()) {
+                    legacyDrawing = false;
+                }
+            }
+        } else {
+            legacyDrawing = false;
         }
+
         if (!legacyDrawing) {
             SDL_Image *image = imgFind->second;
             SDL_RendererFlip flip = SDL_FLIP_NONE;
@@ -73,6 +96,7 @@ void Render::renderSprites() {
 
             SDL_RenderCopyEx(renderer, image->spriteTexture, &image->textureRect, &image->renderRect, image->rotation, &center, flip);
         } else {
+
             currentSprite->spriteWidth = 64;
             currentSprite->spriteHeight = 64;
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);

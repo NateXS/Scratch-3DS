@@ -1,5 +1,6 @@
 #pragma once
 #include "image.hpp"
+#include <SDL2/SDL_mixer.h>
 
 extern int windowWidth;
 extern int windowHeight;

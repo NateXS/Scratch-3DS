@@ -2,6 +2,8 @@
 
 volatile int Unzip::projectOpened;
 volatile bool Unzip::threadFinished;
+mz_zip_archive Unzip::zipArchive;
+std::vector<char> Unzip::zipBuffer;
 std::string Unzip::filePath = "";
 
 int Unzip::openFile(std::ifstream *file) {
