@@ -10,6 +10,12 @@
 #include <whb/sdcard.h>
 #endif
 
+#ifdef __SWITCH__
+#include <switch.h>
+
+char nickname[0x21];
+#endif
+
 int windowWidth = 480;
 int windowHeight = 360;
 SDL_Window *window = nullptr;
@@ -33,6 +39,55 @@ bool Render::Init() {
         return false;
     }
     nn::act::Initialize();
+#elif defined(__SWITCH__)
+    SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
+
+    AccountUid userID = {0};
+    AccountProfile profile;
+    AccountProfileBase profilebase;
+    memset(&profilebase, 0, sizeof(profilebase));
+
+    Result rc = romfsInit();
+    if (R_FAILED(rc)) {
+        SDL_LogCritical(SDL_LOG_CATEGORY_SYSTEM, "Failed to init romfs."); // TODO: Include error code
+        goto postAccount;
+    }
+
+    rc = accountInitialize(AccountServiceType_Application);
+    if (R_FAILED(rc)) {
+        SDL_LogError(SDL_LOG_CATEGORY_SYSTEM, "accountInitialize failed.");
+        goto postAccount;
+    }
+
+    rc = accountGetPreselectedUser(&userID);
+    if (R_FAILED(rc)) {
+        PselUserSelectionSettings settings;
+        memset(&settings, 0, sizeof(settings));
+        rc = pselShowUserSelector(&userID, &settings);
+        if (R_FAILED(rc)) {
+            SDL_LogError(SDL_LOG_CATEGORY_SYSTEM, "pselShowUserSelector failed.");
+            goto postAccount;
+        }
+    }
+
+    rc = accountGetProfile(&profile, userID);
+    if (R_FAILED(rc)) {
+        SDL_LogError(SDL_LOG_CATEGORY_SYSTEM, "accountGetProfile failed.");
+        goto postAccount;
+    }
+
+    rc = accountProfileGet(&profile, NULL, &profilebase);
+    if (R_FAILED(rc)) {
+        SDL_LogError(SDL_LOG_CATEGORY_SYSTEM, "accountProfileGet failed.");
+        goto postAccount;
+    }
+
+    memset(nickname, 0, sizeof(nickname));
+    strncpy(nickname, profilebase.nickname, sizeof(nickname) - 1);
+
+    accountProfileClose(&profile);
+    accountExit();
+postAccount:
 #endif
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER);
@@ -60,8 +115,10 @@ void Render::deInit() {
     IMG_Quit();
     SDL_Quit();
 
-#ifdef __WIIU__
+#if defined(__WIIU__) || defined(__SWITCH__)
     romfsExit();
+#endif
+#ifdef __WIIU__
     WHBUnmountSdCard();
     nn::act::Finalize();
 #endif

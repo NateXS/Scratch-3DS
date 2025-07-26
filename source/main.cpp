@@ -5,6 +5,10 @@
 #include <chrono>
 #include <thread>
 
+#ifdef __SWITCH__
+#include <switch.h>
+#endif
+
 // arm-none-eabi-addr2line -e Scratch.elf xxx
 // ^ for debug purposes
 
@@ -69,6 +73,10 @@ int main(int argc, char **argv) {
     BlockExecutor::timer = std::chrono::high_resolution_clock::now();
 
     while (Render::appShouldRun()) {
+#ifdef __SWITCH__
+        if (!appletMainLoop()) break;
+#endif
+      
         endTime = std::chrono::high_resolution_clock::now();
         if (endTime - startTime >= std::chrono::milliseconds(1000 / Scratch::FPS)) {
             startTime = std::chrono::high_resolution_clock::now();
