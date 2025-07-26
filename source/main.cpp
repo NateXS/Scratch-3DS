@@ -3,10 +3,22 @@
 #include "scratch/render.hpp"
 #include "scratch/unzip.hpp"
 #include <chrono>
-#include <thread>
+#include <iomanip>
+#include <memory>
+#include <mist/mist.hpp>
+#include <random>
+#include <sstream>
+#include <string>
+
+#ifdef __WIIU__
+#include <whb/sdcard.h>
+#endif
 
 // arm-none-eabi-addr2line -e Scratch.elf xxx
 // ^ for debug purposes
+
+size_t projectHash;
+std::unique_ptr<MistConnection> cloudConnection = nullptr;
 
 static void exitApp() {
     Render::deInit();
@@ -14,6 +26,31 @@ static void exitApp() {
 
 static bool initApp() {
     return Render::Init();
+}
+
+void initMist() {
+    // Username Stuff
+
+    std::random_device rd;
+    std::ostringstream usernameStream;
+    usernameStream << "player" << std::setw(7) << std::setfill('0') << rd() % 10000000;
+    std::string username = usernameStream.str();
+
+    std::ostringstream projectID;
+    projectID << "Scratch-3DS/hash-" << projectHash;
+    cloudConnection = std::make_unique<MistConnection>(projectID.str(), username, "contact@grady.link");
+
+    cloudConnection->onConnectionStatus([](bool connected, const std::string &message) {
+        if (connected) {
+            std::cout << "[INFO] Mist++ Connected: " << message << std::endl;
+            return;
+        }
+        std::cout << "[INFO] Mist++ Disconnected: " << message << std::endl;
+    });
+
+    cloudConnection->onVariableUpdate(BlockExecutor::handleCloudVariableChange);
+
+    cloudConnection->connect();
 }
 
 int main(int argc, char **argv) {
@@ -64,6 +101,8 @@ int main(int argc, char **argv) {
             return 0;
         }
     }
+
+    initMist();
 
     BlockExecutor::runAllBlocksByOpcode(Block::EVENT_WHENFLAGCLICKED);
     BlockExecutor::timer = std::chrono::high_resolution_clock::now();
