@@ -127,7 +127,7 @@ class BlockExecutor {
     static bool hasActiveRepeats(Sprite *sprite, std::string blockChainID);
 
     // For the `Timer` Scratch block.
-    static std::chrono::_V2::system_clock::time_point timer;
+    static std::chrono::high_resolution_clock::time_point timer;
 
   private:
     /**

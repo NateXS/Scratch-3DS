@@ -10,7 +10,7 @@
 #include "blocks/sound.hpp"
 
 size_t blocksRun = 0;
-std::chrono::_V2::system_clock::time_point BlockExecutor::timer;
+std::chrono::high_resolution_clock::time_point BlockExecutor::timer;
 
 BlockExecutor::BlockExecutor() {
     registerHandlers();
