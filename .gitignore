@@ -51,3 +51,6 @@ romfs/sample.ogg
 romfs/project.sb3_FILES/project.json
 Scratch-pc
 scratch-wiiu/
+
+# Stored Files
+cloud-username.txt

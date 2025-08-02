@@ -17,6 +17,10 @@ int Scratch::projectHeight = 360;
 int Scratch::FPS = 30;
 bool Scratch::fencing = true;
 
+#ifdef ENABLE_CLOUDVARS
+bool cloudProject = false;
+#endif
+
 void initializeSpritePool(int poolSize) {
     for (int i = 0; i < poolSize; i++) {
         Sprite newSprite;
@@ -156,6 +160,10 @@ void loadSprites(const nlohmann::json &json) {
             newVariable.id = id;
             newVariable.name = data[0];
             newVariable.value = Value::fromJson(data[1]);
+#ifdef ENABLE_CLOUDVARS
+            newVariable.cloud = data.size() == 3;
+            cloudProject = cloudProject || newVariable.cloud;
+#endif
             newSprite->variables[newVariable.id] = newVariable; // add variable to sprite
         }
 

@@ -9,6 +9,12 @@
 #include "blocks/sensing.hpp"
 #include "blocks/sound.hpp"
 
+#ifdef ENABLE_CLOUDVARS
+#include <mist/mist.hpp>
+
+extern std::unique_ptr<MistConnection> cloudConnection;
+#endif
+
 size_t blocksRun = 0;
 std::chrono::_V2::system_clock::time_point BlockExecutor::timer;
 
@@ -369,6 +375,9 @@ void BlockExecutor::setVariableValue(const std::string &variableId, const Value 
             auto globalIt = currentSprite->variables.find(variableId);
             if (globalIt != currentSprite->variables.end()) {
                 globalIt->second.value = newValue;
+#ifdef ENABLE_CLOUDVARS
+                if (globalIt->second.cloud) cloudConnection->set(globalIt->second.name, globalIt->second.value.asString());
+#endif
                 return;
             }
         }
@@ -436,6 +445,21 @@ Value BlockExecutor::getVariableValue(std::string variableId, Sprite *sprite) {
 
     return Value();
 }
+
+#ifdef ENABLE_CLOUDVARS
+void BlockExecutor::handleCloudVariableChange(const std::string &name, const std::string &value) {
+    for (const auto &currentSprite : sprites) {
+        if (currentSprite->isStage) {
+            for (auto it = currentSprite->variables.begin(); it != currentSprite->variables.end(); ++it) {
+                if (it->second.name == name) {
+                    it->second.value = Value(value);
+                    return;
+                }
+            }
+        }
+    }
+}
+#endif
 
 Value BlockExecutor::getCustomBlockValue(std::string valueName, Sprite *sprite, Block block) {
 
