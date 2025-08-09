@@ -1,0 +1,80 @@
+.PHONY: all clean debug release
+
+TARGET_HTML	:=	scratch.html
+TARGET_JS		:=	scratch.js
+BUILD				:=	build/web
+SOURCES			:=	source source/scratch source/scratch/blocks source/sdl source/sdl/audio include/miniz include/nlohmann
+INCLUDES		:=	include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
+ROMFS				:=	romfs
+GRAPHICS		:=	gfx
+GFXBUILD		:=	$(ROMFS)/gfx
+
+CXX	:=	em++
+CC	:=	emcc
+
+# Base compiler flags
+EMFLAGS_BASE	:=	-sUSE_SDL=2 -sUSE_SDL_IMAGE=2 -sUSE_SDL_TTF=2 -sUSE_SDL_MIXER=2 -sALLOW_MEMORY_GROWTH=1 -sNO_DISABLE_EXCEPTION_CATCHING -sSDL2_IMAGE_FORMATS='["png","jpg"]' --preload-file $(ROMFS) --shell-file shell.html
+CXXFLAGS_BASE	:=	-std=c++17 -Wall -D__WEB__ -DSDL_BUILD -fexceptions $(EMFLAGS_BASE)
+CFLAGS_BASE		:=	-D__WEB__ -DSDL_BUILD $(EMFLAGS_BASE)
+
+# Debug and Release flags
+CXXFLAGS_DEBUG		:=	$(CXXFLAGS_BASE) -g -O0 -DDEBUG
+CXXFLAGS_RELEASE	:=	$(CXXFLAGS_BASE) -O2 -DNDEBUG
+CFLAGS_DEBUG			:=	$(CFLAGS_BASE) -g -O0 -DDEBUG
+CFLAGS_RELEASE		:=	$(CFLAGS_BASE) -O2 -DNDEBUG
+
+# Output flags
+LDFLAGS_DEBUG		:=	$(EMFLAGS_BASE) -g -o $(TARGET_HTML)
+LDFLAGS_RELEASE	:=	$(EMFLAGS_BASE) -O2 -o $(TARGET_HTML)
+
+# Find all .cpp and .c files recursively
+SRC_CPP	:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.cpp))
+SRC_C		:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.c))
+
+# Convert source files to object files in the build dir with matching structure
+OBJS_CPP	:=	$(patsubst %.cpp, $(BUILD)/%.o, $(SRC_CPP))
+OBJS_C		:=	$(patsubst %.c, $(BUILD)/%.o, $(SRC_C))
+OBJS			:=	$(OBJS_CPP) $(OBJS_C)
+
+INCLUDE_FLAGS := $(foreach dir,$(INCLUDES),-I$(dir))
+
+# Default build target (debug)
+all: debug
+
+# Debug build
+debug: CXXFLAGS := $(CXXFLAGS_DEBUG)
+debug: CFLAGS   := $(CFLAGS_DEBUG)
+debug: LDFLAGS  := $(LDFLAGS_DEBUG)
+debug: $(GFXBUILD) $(BUILD)/$(TARGET_HTML)
+
+# Release build
+release: CXXFLAGS := $(CXXFLAGS_RELEASE)
+release: CFLAGS   := $(CFLAGS_RELEASE)
+release: LDFLAGS  := $(LDFLAGS_RELEASE)
+release: $(GFXBUILD) $(BUILD)/$(TARGET_HTML)
+
+$(GFXBUILD):
+	@mkdir -p $@
+	@cp -r $(GRAPHICS)/* $@/
+
+# Final linking step
+$(BUILD)/$(TARGET_HTML): $(OBJS)
+	@mkdir -p $(dir $@)
+	@echo "Linking build for web..."
+	@$(CXX) $(LDFLAGS) $^
+	@echo "Built web assets for $(TARGET_HTML)"
+
+# Compile C++ objects
+$(BUILD)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	@echo "Compiling C++ $<"
+	@$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c $< -o $@
+
+# Compile C objects
+$(BUILD)/%.o: %.c
+	@mkdir -p $(dir $@)
+	@echo "Compiling C $<"
+	@$(CC) $(CFLAGS) $(INCLUDE_FLAGS) -c $< -o $@
+
+clean:
+	rm -rf $(BUILD)

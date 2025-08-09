@@ -16,7 +16,7 @@ extern std::unique_ptr<MistConnection> cloudConnection;
 #endif
 
 size_t blocksRun = 0;
-std::chrono::_V2::system_clock::time_point BlockExecutor::timer;
+std::chrono::high_resolution_clock::time_point BlockExecutor::timer;
 
 BlockExecutor::BlockExecutor() {
     registerHandlers();
