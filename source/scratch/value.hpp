@@ -145,6 +145,21 @@ class Value {
         return "";
     }
 
+    std::any asAny() const {
+        switch (type) {
+        case ValueType::INTEGER:
+            return intValue;
+        case ValueType::DOUBLE: {
+            // handle whole numbers too, because scratch i guess
+            if (std::floor(doubleValue) == doubleValue) return static_cast<int>(doubleValue);
+            return doubleValue;
+        }
+        case ValueType::STRING:
+            return *stringValue;
+        }
+        return ""; // IDK what to return here but I think this is right/will work
+    }
+
     // Arithmetic operations
     Value operator+(const Value &other) const {
         Value a = *this;

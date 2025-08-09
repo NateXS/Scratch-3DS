@@ -37,6 +37,7 @@ class Unzip {
             return;
         }
         loadSprites(project_json);
+        loadExtensions(project_json);
         Unzip::projectOpened = 1;
         Unzip::threadFinished = true;
         return;

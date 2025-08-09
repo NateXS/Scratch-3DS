@@ -19,15 +19,19 @@ enum class BlockResult {
 
 class BlockExecutor {
   private:
-    std::unordered_map<Block::opCode, std::function<BlockResult(Block &, Sprite *, bool *, bool)>> handlers;
-    std::unordered_map<Block::opCode, std::function<Value(Block &, Sprite *)>> valueHandlers;
-    // std::unordered_map<Block::opCode, std::function<Value(Block&,Sprite*)>> conditionBlockHandlers;
+    std::unordered_map<std::string, std::function<BlockResult(Block &, Sprite *, bool *, bool)>> handlers;
+    std::unordered_map<std::string, std::function<Value(Block &, Sprite *)>> valueHandlers;
 
   public:
     /**
      * The main Class for running Scratch Blocks.
      */
     BlockExecutor();
+
+    /**
+     * Registers every extension block function to the lookup map.
+     */
+    void registerExtensionHandlers();
 
     /**
      * Runs and executes the specified `block` in a `sprite`.
@@ -42,7 +46,7 @@ class BlockExecutor {
      * Goes through every `block` in every `sprite` to find and run a block with the specified `opCode`.
      * @param opCodeToFind Name of the block to run
      */
-    static std::vector<Block *> runAllBlocksByOpcode(Block::opCode opcodeToFind);
+    static std::vector<Block *> runAllBlocksByOpcode(std::string opcodeToFind);
 
     /**
      * Goes through every currently active repeat block in every `sprite` and runs it once.
