@@ -30,6 +30,8 @@ int Unzip::openFile(std::ifstream *file) {
 
 #if defined(__WIIU__) || defined(__OGC__)
         file->open("romfs:/" + filename, std::ios::binary | std::ios::ate);
+#elif defined __EMSCRIPTEN__
+        file->open(filename, std::ios::binary | std::ios::ate);
 #else
         file->open(filePath, std::ios::binary | std::ios::ate);
 #endif

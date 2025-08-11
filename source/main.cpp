@@ -5,6 +5,13 @@
 #include "scratch/unzip.hpp"
 #include <chrono>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <unistd.h>
+#endif
+
+// arm-none-eabi-addr2line -e Scratch.elf xxx
+// ^ for debug purposes
 #ifdef __OGC__
 #include <SDL2/SDL.h>
 #endif
@@ -40,6 +47,18 @@ static bool initApp() {
     return Render::Init();
 }
 
+static void mainLoop() {
+    if (Render::checkFramerate()) {
+            Input::getInput();
+            BlockExecutor::runRepeatBlocks();
+            BlockExecutor::runBroadcasts();
+            Render::renderSprites();
+        }
+    if (toExit) {
+        exitApp();
+        exit(0);
+    }
+}
 #ifdef ENABLE_CLOUDVARS
 void initMist() {
     // Username Stuff
@@ -98,6 +117,10 @@ void initMist() {
 #endif
 
 int main(int argc, char **argv) {
+#ifdef __EMSCRIPTEN__
+    chdir("romfs");
+#endif
+
     if (!initApp()) {
         exitApp();
         return 1;
@@ -146,15 +169,10 @@ int main(int argc, char **argv) {
     BlockExecutor::runAllBlocksByOpcode(Block::EVENT_WHENFLAGCLICKED);
     BlockExecutor::timer.start();
 
-    while (Render::appShouldRun()) {
-        if (Render::checkFramerate()) {
-            Input::getInput();
-            BlockExecutor::runRepeatBlocks();
-            BlockExecutor::runBroadcasts();
-            Render::renderSprites();
-        }
-    }
-
-    exitApp();
-    return 0;
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop(mainLoop, 0, 1);
+#else
+    while (Render::appShouldRun())
+        mainLoop();
+#endif
 }
