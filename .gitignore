@@ -1,6 +1,7 @@
 # folders
 .vs/
 .vscode/
+.cache/
 build/
 romfs/project/
 romfs/gfx
@@ -59,6 +60,10 @@ romfs/project.sb3_FILES/project.json
 Scratch-pc
 scratch-wiiu/
 scratch-wii.zip
+extensions/
 
 # Stored Files
 cloud-username.txt
+
+# Other
+compile_commands.json

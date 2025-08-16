@@ -14,7 +14,7 @@ PKGCONF_WIIU	:=	/opt/devkitpro/portlibs/wiiu/bin/powerpc-eabi-pkg-config
 TARGET		:=	scratch-wiiu
 BUILD			:=	build/wiiu
 SOURCES		:=	source source/scratch source/scratch/blocks source/scratch/menus source/sdl source/sdl/audio include/miniz include/nlohmann
-INCLUDES	:=	include source/scratch source/scratch/blocks source/scratch/menus source/sdl source/sdl/audio include/nlohmann
+INCLUDES	:=	include source/scratch source/scratch/blocks source/scratch/menus extension-include/ source/sdl source/sdl/audio include/nlohmann
 ROMFS	:=	romfs
 GRAPHICS	:=	gfx
 GFXBUILD	:=	$(ROMFS)/gfx
@@ -33,6 +33,7 @@ APP_DRC_SPLASH				:=	gfx/wiiu/drc-splash.png
 # Config Options
 ENABLE_CLOUDVARS	?=	0
 ENABLE_AUDIO	?=	1
+VERBOSE_EXTENSIONS	?=	0
 
 # Flags
 
@@ -66,7 +67,11 @@ $(error "[ERROR] Mist++ must be v0.2.0 or newer.")
 endif
 endif
 
-CXXFLAGS	:=	$(CFLAGS) -std=c++17 -Wall -fexceptions
+ifeq ($(VERBOSE_EXTENSIONS),1)
+CFLAGS	+=	-DVERBOSE_EXTENSIONS
+endif
+
+CXXFLAGS	:=	$(CFLAGS) -std=c++20 -Wall -fexceptions
 
 LIBDIRS	:=	$(PORTLIBS) $(WUT_ROOT)
 

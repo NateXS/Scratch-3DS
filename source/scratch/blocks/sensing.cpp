@@ -197,10 +197,10 @@ Value SensingBlocks::touchingObject(Block &block, Sprite *sprite) {
         double halfHeight = 0.5;
 
         std::vector<std::pair<double, double>> mousePoints = {
-            {Input::mousePointer.x - halfWidth, Input::mousePointer.y - halfHeight}, // Top-left
-            {Input::mousePointer.x + halfWidth, Input::mousePointer.y - halfHeight}, // Top-right
-            {Input::mousePointer.x + halfWidth, Input::mousePointer.y + halfHeight}, // Bottom-right
-            {Input::mousePointer.x - halfWidth, Input::mousePointer.y + halfHeight}  // Bottom-left
+            { Input::mousePointer.x - halfWidth, Input::mousePointer.y - halfHeight }, // Top-left
+            { Input::mousePointer.x + halfWidth, Input::mousePointer.y - halfHeight }, // Top-right
+            { Input::mousePointer.x + halfWidth, Input::mousePointer.y + halfHeight }, // Bottom-right
+            { Input::mousePointer.x - halfWidth, Input::mousePointer.y + halfHeight }  // Bottom-left
         };
 
         bool collision = true;

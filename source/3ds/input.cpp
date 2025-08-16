@@ -147,7 +147,7 @@ void Input::getInput() {
             }
         }
         if (keyHeldFrames == 1 || keyHeldFrames > 13)
-            BlockExecutor::runAllBlocksByOpcode(Block::EVENT_WHEN_KEY_PRESSED);
+            BlockExecutor::runAllBlocksByOpcode("event_whenkeypressed");
 
     } else {
         keyHeldFrames = 0;

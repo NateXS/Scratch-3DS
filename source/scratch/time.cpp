@@ -1,24 +1,23 @@
 // code mostly taken from devkitpro's time example, with edits needed for Scratch.
 #include <time.hpp>
 
-const std::string months[12] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+const std::string months[12] = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
 
-const std::string weekDays[7] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+const std::string weekDays[7] = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
-const u16 daysAtStartOfMonthLUT[12] =
-    {
-        0 % 7,   // january    31
-        31 % 7,  // february   28+1(leap year)
-        59 % 7,  // march      31
-        90 % 7,  // april      30
-        120 % 7, // may        31
-        151 % 7, // june       30
-        181 % 7, // july       31
-        212 % 7, // august     31
-        243 % 7, // september  30
-        273 % 7, // october    31
-        304 % 7, // november   30
-        334 % 7  // december   31
+const u16 daysAtStartOfMonthLUT[12] = {
+    0 % 7,   // january    31
+    31 % 7,  // february   28+1(leap year)
+    59 % 7,  // march      31
+    90 % 7,  // april      30
+    120 % 7, // may        31
+    151 % 7, // june       30
+    181 % 7, // july       31
+    212 % 7, // august     31
+    243 % 7, // september  30
+    273 % 7, // october    31
+    304 % 7, // november   30
+    334 % 7  // december   31
 };
 
 static inline bool isLeapYear(int year) {
@@ -82,7 +81,7 @@ double Time::getDaysSince2000() {
     time_t now = time(NULL);
 
     // Set up struct tm for Jan 1, 2000, 00:00:00 UTC
-    struct tm start_tm = {0};
+    struct tm start_tm = { 0 };
     start_tm.tm_year = 2000 - 1900;
     start_tm.tm_mon = 0;
     start_tm.tm_mday = 1;

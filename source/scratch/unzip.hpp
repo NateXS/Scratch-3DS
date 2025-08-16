@@ -45,6 +45,7 @@ class Unzip {
         }
         loadingState = "Loading Sprites";
         loadSprites(project_json);
+        loadExtensions(project_json);
         Unzip::projectOpened = 1;
         Unzip::threadFinished = true;
         return;
@@ -135,7 +136,7 @@ class Unzip {
             file->clear();                 // Clear any EOF flags
             file->seekg(0, std::ios::beg); // Go to the start of the file
 #ifdef ENABLE_CLOUDVARS
-            projectJSON = {std::istreambuf_iterator<char>(*file), std::istreambuf_iterator<char>()};
+            projectJSON = { std::istreambuf_iterator<char>(*file), std::istreambuf_iterator<char>() };
 #endif
             (*file) >> project_json;
         }

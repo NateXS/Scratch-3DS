@@ -6,6 +6,7 @@
 #include "../scratch/render.hpp"
 #include "../scratch/text.hpp"
 #include "../scratch/unzip.hpp"
+#include "extension.hpp"
 #include "image.hpp"
 #include "interpret.hpp"
 #ifdef ENABLE_AUDIO
@@ -299,6 +300,8 @@ void Render::renderSprites() {
     C2D_TargetClear(topScreen, clrWhite);
     C2D_TargetClear(bottomScreen, clrWhite);
 
+    runAllExtensionFunctions("preRender");
+
     if (Render::renderMode != Render::BOTTOM_SCREEN_ONLY) {
         C2D_SceneBegin(topScreen);
 
@@ -361,6 +364,8 @@ void Render::renderSprites() {
         if (Render::renderMode != Render::BOTH_SCREENS)
             drawBlackBars(BOTTOM_SCREEN_WIDTH, SCREEN_HEIGHT);
     }
+
+    runAllExtensionFunctions("postRender");
 
     C2D_Flush();
     C3D_FrameEnd(0);

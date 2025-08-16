@@ -1,8 +1,10 @@
 #pragma once
 #include "math.hpp"
+#include "os.hpp"
 #include <cmath>
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <stdexcept>
 #include <string>
 
 enum class ValueType {
@@ -33,6 +35,32 @@ class Value {
 
     explicit Value(bool val) : type(ValueType::BOOLEAN) {
         stringValue = new std::string(val ? "true" : "false");
+    }
+
+    explicit Value(std::any val) {
+        if (!val.has_value()) {
+            Log::logError("Nothing in std::any");
+            return;
+        }
+
+        if (val.type() == typeid(std::string)) {
+            *this = Value(std::any_cast<const std::string &>(val));
+            return;
+        }
+        if (val.type() == typeid(int)) {
+            *this = Value(std::any_cast<int>(val));
+            return;
+        }
+        if (val.type() == typeid(double)) {
+            *this = Value(std::any_cast<double>(val));
+            return;
+        }
+        if (val.type() == typeid(bool)) {
+            *this = Value(std::any_cast<bool>(val));
+            return;
+        }
+
+        Log::logError("Unsupported type in std::any");
     }
 
     explicit Value(const std::string &val) : type(ValueType::STRING) {
@@ -143,6 +171,23 @@ class Value {
             return *stringValue;
         }
         return "";
+    }
+
+    std::any asAny() const {
+        switch (type) {
+        case ValueType::INTEGER:
+            return intValue;
+        case ValueType::DOUBLE: {
+            // handle whole numbers too, because scratch i guess
+            if (std::floor(doubleValue) == doubleValue) return static_cast<int>(doubleValue);
+            return doubleValue;
+        }
+        case ValueType::STRING:
+            return *stringValue;
+        case ValueType::BOOLEAN:
+            return *stringValue;
+        }
+        return ""; // IDK what to return here but I think this is right/will work
     }
 
     // Arithmetic operations
@@ -264,8 +309,5 @@ class Value {
         return Value(0);
     }
 
-    ValueType
-    getType() const {
-        return type;
-    }
+    ValueType getType() const { return type; }
 };

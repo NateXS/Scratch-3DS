@@ -74,7 +74,8 @@ void SoundPlayer::startSoundLoaderThread(Sprite *sprite, mz_zip_archive *zip, co
         .sprite = sprite,
         .zip = zip,
         .soundId = soundId,
-        .streamed = sprite->isStage}; // stage sprites get streamed audio
+        .streamed = sprite->isStage
+    }; // stage sprites get streamed audio
 
 #ifdef __OGC__
     params->streamed = false; // streamed sounds crash on wii

@@ -514,7 +514,7 @@ bool get_C2D_Image(imageRGBA rgba) {
 
     // Log::log("C2D Image Successfully loaded!");
 
-    imageC2Ds[rgba.name] = {image, 120};
+    imageC2Ds[rgba.name] = { image, 120 };
     C3D_FrameSync(); // wait for Async functions to finish
     return true;
 }

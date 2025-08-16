@@ -38,8 +38,9 @@ GFXBUILD	:=	$(ROMFS)/gfx
 
 # Config Options
 ENABLE_CLOUDVARS	?=	0
-ENABLE_BUBBLES	  ?=	1
-ENABLE_AUDIO	?=	1
+ENABLE_BUBBLES		?=	1
+ENABLE_AUDIO		?=	1
+VERBOSE_EXTENSIONS	?=	0
 
 # Check for SDL2 libraries
 ifeq ($(ENABLE_AUDIO),1)
@@ -96,11 +97,14 @@ ifeq ($(shell $(PKGCONF_3DS) --atleast-version=0.2.0 mist++ >/dev/null 2>&1; ech
 $(error "[ERROR] Mist++ must be v0.2.0 or newer.")
 endif
 endif
+ifeq ($(VERBOSE_EXTENSIONS),1)
+CFLAGS	+=	-DVERBOSE_EXTENSIONS
+endif
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-CXXFLAGS	:= $(CFLAGS) -fno-rtti -Wno-psabi -std=c++17 -fexceptions
+CXXFLAGS	:= $(CFLAGS) -fno-rtti -Wno-psabi -std=c++20 -fexceptions
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

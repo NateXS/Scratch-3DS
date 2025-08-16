@@ -191,7 +191,7 @@ void Input::getInput() {
         keyHeldFrames++;
         inputButtons.push_back("any");
         if (keyHeldFrames == 1 || keyHeldFrames > 13)
-            BlockExecutor::runAllBlocksByOpcode(Block::EVENT_WHEN_KEY_PRESSED);
+            BlockExecutor::runAllBlocksByOpcode("event_whenkeypressed");
     } else keyHeldFrames = 0;
 
     // TODO: Add way to disable touch input (currently overrides mouse input.)

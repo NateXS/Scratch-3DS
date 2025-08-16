@@ -1,9 +1,21 @@
 #include "interpret.hpp"
+#include "extension.hpp"
 #include "audio.hpp"
 #include "input.hpp"
 #include "os.hpp"
 #include "render.hpp"
 #include "unzip.hpp"
+#include <cerrno>
+#include <cstring>
+#include <fstream>
+#include <iterator>
+
+#ifdef __PC__
+#include <dlfcn.h>
+#elif defined(__WIIU__)
+#include <coreinit/dynload.h>
+#include <whb/sdcard.h>
+#endif
 
 #if defined(__WIIU__) && defined(ENABLE_CLOUDVARS)
 #include <whb/sdcard.h>
@@ -237,10 +249,10 @@ std::vector<std::pair<double, double>> getCollisionPoints(Sprite *currentSprite)
 
     // Define the four corners relative to the sprite's center
     std::vector<std::pair<double, double>> corners = {
-        {-halfWidth - (rotationCenterX * currentSprite->size * 0.01), -halfHeight + (rotationCenterY)}, // Top-left
-        {halfWidth - (rotationCenterX * currentSprite->size * 0.01), -halfHeight + (rotationCenterY)},  // Top-right
-        {halfWidth - (rotationCenterX * currentSprite->size * 0.01), halfHeight + (rotationCenterY)},   // Bottom-right
-        {-halfWidth - (rotationCenterX * currentSprite->size * 0.01), halfHeight + (rotationCenterY)}   // Bottom-left
+        { -halfWidth - (rotationCenterX * currentSprite->size * 0.01), -halfHeight + (rotationCenterY) }, // Top-left
+        { halfWidth - (rotationCenterX * currentSprite->size * 0.01), -halfHeight + (rotationCenterY) },  // Top-right
+        { halfWidth - (rotationCenterX * currentSprite->size * 0.01), halfHeight + (rotationCenterY) },   // Bottom-right
+        { -halfWidth - (rotationCenterX * currentSprite->size * 0.01), halfHeight + (rotationCenterY) }   // Bottom-left
     };
 
     // Rotate and translate each corner
@@ -360,7 +372,7 @@ void loadSprites(const nlohmann::json &json) {
             Block newBlock;
             newBlock.id = id;
             if (data.contains("opcode")) {
-                newBlock.opcode = newBlock.stringToOpcode(data["opcode"].get<std::string>());
+                newBlock.opcode = data["opcode"].get<std::string>();
             }
             if (data.contains("next") && !data["next"].is_null()) {
                 newBlock.next = data["next"].get<std::string>();
@@ -541,7 +553,7 @@ void loadSprites(const nlohmann::json &json) {
             newMonitor.mode = monitor.at("mode").get<std::string>();
 
         if (monitor.contains("opcode") && !monitor["opcode"].is_null())
-            newMonitor.opcode = Block::stringToOpcode(monitor.at("opcode").get<std::string>());
+            newMonitor.opcode = monitor.at("opcode").get<std::string>();
 
         if (monitor.contains("params") && monitor["params"].is_object()) {
             for (const auto &param : monitor["params"].items()) {
@@ -746,6 +758,56 @@ void loadSprites(const nlohmann::json &json) {
 
     Input::applyControls(OS::getScratchFolderLocation() + Unzip::filePath + ".json");
     Log::log("Loaded " + std::to_string(sprites.size()) + " sprites.");
+}
+
+void loadExtensions(const nlohmann::json &json) {
+    if (!json.contains("extensions")) return;
+
+    const std::vector<std::string> extensionNames = json["extensions"].get<std::vector<std::string>>();
+    for (const auto &name : extensionNames) {
+#ifdef __WIIU__
+        std::ostringstream extensionsPrefixStream;
+        extensionsPrefixStream << WHBGetSdCardMountPath() << "/wiiu/scratch-wiiu/extensions/";
+        const std::string extensionsPrefix = extensionsPrefixStream.str();
+#else
+        const std::string extensionsPrefix = "extensions/";
+#endif
+
+        std::ifstream f(extensionsPrefix + name + ".json");
+        if (!f.is_open()) {
+            Log::logError("Failed to load extension types: " + extensionsPrefix + name + ".json: " + strerror(errno) + ", " + std::to_string(errno));
+            continue;
+        }
+        nlohmann::json typesJSON = nlohmann::json::parse(f);
+
+#ifdef __PC__
+#ifdef __APPLE__
+        const std::string libExt = ".dylib";
+#elif defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)
+        const std::string libExt = ".so";
+#else
+#error Unsupported Platform
+#endif
+
+        void *handle = dlopen((extensionsPrefix + name + libExt).c_str(), RTLD_LAZY);
+        if (!handle) {
+            Log::logError("Failed to load extension library: " + extensionsPrefix + name + libExt + ", dlerror: " + dlerror());
+            continue;
+        }
+        extensions.push_back((struct Extension){ name, typesJSON, handle });
+#elif defined(__WIIU__)
+        extensions.push_back((struct Extension){ name, typesJSON, nullptr });
+        OSDynLoad_Error error = OSDynLoad_Acquire((extensionsPrefix + name + ".rpl").c_str(), &extensions.back().module);
+        if (error) {
+            Log::logError("Failed to load extension library: " + extensionsPrefix + name + ".rpl, error code (reference WUT): " + std::to_string(error));
+            continue;
+        }
+#else
+#error Unsupported Platform
+#endif
+    }
+
+    executor.registerExtensionHandlers();
 }
 
 Block *findBlock(std::string blockId) {
