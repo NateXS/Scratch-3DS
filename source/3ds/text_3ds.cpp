@@ -40,7 +40,7 @@ void TextObject3DS::setText(std::string txt) {
 std::vector<float> TextObject3DS::getSize() {
     float width, height;
     C2D_TextGetDimensions(&textClass.c2dText, scale, scale, &width, &height);
-    return {width, height};
+    return { width, height };
 }
 
 void TextObject3DS::render(int xPos, int yPos) {

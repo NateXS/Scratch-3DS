@@ -30,6 +30,11 @@ class BlockExecutor {
     BlockExecutor();
 
     /**
+     * Registers every extension block function to the lookup map.
+     */
+    void registerExtensionHandlers();
+
+    /**
      * Runs and executes the specified `block` in a `sprite`.
      * @param block Reference to a block variable
      * @param sprite Pointer to a sprite variable

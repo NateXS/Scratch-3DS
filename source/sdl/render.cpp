@@ -1,5 +1,6 @@
 #include "../scratch/render.hpp"
 #include "../scratch/audio.hpp"
+#include "../scratch/extension.hpp"
 #include "../scratch/unzip.hpp"
 #include "image.hpp"
 #include "interpret.hpp"
@@ -81,7 +82,7 @@ bool Render::Init() {
     windowWidth = 854;
     windowHeight = 480;
 #elif defined(__SWITCH__)
-    AccountUid userID = {0};
+    AccountUid userID = { 0 };
     AccountProfile profile;
     AccountProfileBase profilebase;
     memset(&profilebase, 0, sizeof(profilebase));
@@ -213,7 +214,7 @@ void Render::endFrame(bool shouldFlush) {
 
 void Render::drawBox(int w, int h, int x, int y, int colorR, int colorG, int colorB, int colorA) {
     SDL_SetRenderDrawColor(renderer, colorR, colorG, colorB, colorA);
-    SDL_Rect rect = {x - (w / 2), y - (h / 2), w, h};
+    SDL_Rect rect = { x - (w / 2), y - (h / 2), w, h };
     SDL_RenderFillRect(renderer, &rect);
 }
 
@@ -265,8 +266,8 @@ void drawBlackBars(int screenWidth, int screenHeight) {
         float barWidth = (screenWidth - scaledProjectWidth) / 2.0f;
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_Rect leftBar = {0, 0, static_cast<int>(std::ceil(barWidth)), screenHeight};
-        SDL_Rect rightBar = {static_cast<int>(std::floor(screenWidth - barWidth)), 0, static_cast<int>(std::ceil(barWidth)), screenHeight};
+        SDL_Rect leftBar = { 0, 0, static_cast<int>(std::ceil(barWidth)), screenHeight };
+        SDL_Rect rightBar = { static_cast<int>(std::floor(screenWidth - barWidth)), 0, static_cast<int>(std::ceil(barWidth)), screenHeight };
 
         SDL_RenderFillRect(renderer, &leftBar);
         SDL_RenderFillRect(renderer, &rightBar);
@@ -277,8 +278,8 @@ void drawBlackBars(int screenWidth, int screenHeight) {
         float barHeight = (screenHeight - scaledProjectHeight) / 2.0f;
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_Rect topBar = {0, 0, screenWidth, static_cast<int>(std::ceil(barHeight))};
-        SDL_Rect bottomBar = {0, static_cast<int>(std::floor(screenHeight - barHeight)), screenWidth, static_cast<int>(std::ceil(barHeight))};
+        SDL_Rect topBar = { 0, 0, screenWidth, static_cast<int>(std::ceil(barHeight)) };
+        SDL_Rect bottomBar = { 0, static_cast<int>(std::floor(screenHeight - barHeight)), screenWidth, static_cast<int>(std::ceil(barHeight)) };
 
         SDL_RenderFillRect(renderer, &topBar);
         SDL_RenderFillRect(renderer, &bottomBar);
@@ -289,6 +290,8 @@ void Render::renderSprites() {
     SDL_GetWindowSizeInPixels(window, &windowWidth, &windowHeight);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);
+
+    runAllExtensionFunctions("preRender");
 
     double scaleX = static_cast<double>(windowWidth) / Scratch::projectWidth;
     double scaleY = static_cast<double>(windowHeight) / Scratch::projectHeight;
@@ -347,7 +350,7 @@ void Render::renderSprites() {
 
             image->renderRect.x = ((currentSprite->xPosition * scale) + (windowWidth / 2) - (image->renderRect.w / 2)) - offsetX * std::cos(rotation) + offsetY * std::sin(renderRotation);
             image->renderRect.y = ((currentSprite->yPosition * -scale) + (windowHeight / 2) - (image->renderRect.h / 2)) - offsetX * std::sin(rotation) - offsetY * std::cos(renderRotation);
-            SDL_Point center = {image->renderRect.w / 2, image->renderRect.h / 2};
+            SDL_Point center = { image->renderRect.w / 2, image->renderRect.h / 2 };
 
             // ghost effect
             float ghost = std::clamp(currentSprite->ghostEffect, 0.0f, 100.0f);
@@ -387,6 +390,8 @@ void Render::renderSprites() {
 
     drawBlackBars(windowWidth, windowHeight);
     renderVisibleVariables();
+
+    runAllExtensionFunctions("postRender");
 
     SDL_RenderPresent(renderer);
     Image::FlushImages();
@@ -455,12 +460,14 @@ bool Render::appShouldRun() {
             touchActive = true;
             touchPosition = {
                 static_cast<int>(event.tfinger.x * windowWidth),
-                static_cast<int>(event.tfinger.y * windowHeight)};
+                static_cast<int>(event.tfinger.y * windowHeight)
+            };
             break;
         case SDL_FINGERMOTION:
             touchPosition = {
                 static_cast<int>(event.tfinger.x * windowWidth),
-                static_cast<int>(event.tfinger.y * windowHeight)};
+                static_cast<int>(event.tfinger.y * windowHeight)
+            };
             break;
         case SDL_FINGERUP:
             touchActive = false;

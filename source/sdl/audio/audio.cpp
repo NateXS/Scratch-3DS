@@ -77,7 +77,8 @@ void SoundPlayer::startSoundLoaderThread(Sprite *sprite, mz_zip_archive *zip, co
         .sprite = sprite,
         .zip = zip,
         .soundId = soundId,
-        .streamed = sprite->isStage}; // stage sprites get streamed audio
+        .streamed = sprite->isStage
+    }; // stage sprites get streamed audio
 
 #if defined(__OGC__) || defined(VITA)
     params->streamed = false; // streamed sounds crash on wii. vita does not like them either.

@@ -69,6 +69,12 @@ bool isSeparated(const std::vector<std::pair<double, double>> &poly1,
 void loadSprites(const nlohmann::json &json);
 
 /**
+ * Loads every custom extension from the Scratch's project.json file.
+ * @param json The file to load
+ */
+void loadExtensions(const nlohmann::json &json);
+
+/**
  * Frees every Sprite from memory.
  */
 void cleanupSprites();

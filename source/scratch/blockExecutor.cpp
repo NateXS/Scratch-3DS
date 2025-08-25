@@ -8,17 +8,19 @@
 #include "blocks/procedure.hpp"
 #include "blocks/sensing.hpp"
 #include "blocks/sound.hpp"
+#include "extension.hpp"
 #include "interpret.hpp"
-#include "math.hpp"
 #include "os.hpp"
-#include "sprite.hpp"
-#include <algorithm>
-#include <chrono>
-#include <cstddef>
-#include <iterator>
-#include <ratio>
-#include <utility>
-#include <vector>
+#include "scratch-3ds.hpp"
+#include "value.hpp"
+#include <fstream>
+#include <nlohmann/json.hpp>
+
+#ifdef __PC__
+#include <dlfcn.h>
+#elif defined(__WIIU__)
+#include <coreinit/dynload.h>
+#endif
 
 #ifdef ENABLE_CLOUDVARS
 #include <mist/mist.hpp>
@@ -169,6 +171,107 @@ void BlockExecutor::registerHandlers() {
     handlers["procedures_definition"] = ProcedureBlocks::definition;
     valueHandlers["argument_reporter_string_number"] = ProcedureBlocks::stringNumber;
     valueHandlers["argument_reporter_boolean"] = ProcedureBlocks::booleanArgument;
+}
+
+void BlockExecutor::registerExtensionHandlers() {
+    for (const auto &extension : extensions)
+        for (const auto &[opcode, type] : extension.types.items()) {
+            if (type.get<std::string>() == "void") handlers[opcode] = [extension](Block &block, Sprite *sprite, bool *withoutScreenRefresh, bool fromRepeat) -> BlockResult {
+                std::map<std::string, std::any> arguments; // This is intentionally a `std::map` and not a `std::unordered_map` because `std::unordered_map`s take up more memory and are faster but since there are almost always only 1 or 2 arguments the performance would be exactly the same but use more memory.
+                for (const auto &pair : block.parsedInputs) {
+                    arguments[pair.first] = Scratch::getInputValue(block, pair.first, sprite).asAny();
+                }
+
+                ExtensionData data = createExtensionData(sprite);
+
+#ifdef __PC__
+                char *error;
+                auto customBlock = reinterpret_cast<void (*)(std::map<std::string, std::any> &, ExtensionData)>(dlsym(extension.handle, block.opcode.c_str()));
+                if ((error = dlerror()) != NULL) {
+                    Log::logError("Failed to load function for: '" + block.opcode + "', error: " + error);
+                    return BlockResult::CONTINUE;
+                }
+#elif defined(__WIIU__)
+                void (*customBlock)(std::map<std::string, std::any> &, ExtensionData);
+                OSDynLoad_Error error = OSDynLoad_FindExport(extension.module, OS_DYNLOAD_EXPORT_FUNC, block.opcode.c_str(), (void **)&customBlock);
+                if (error) {
+                    Log::logError("Failed to load function for: '" + block.opcode + "', error (reference WUT): " + std::to_string(error));
+                    return BlockResult::CONTINUE;
+                }
+#endif
+                customBlock(arguments, data);
+
+                return BlockResult::CONTINUE;
+            };
+
+            valueHandlers[opcode] = [extension, type](Block &block, Sprite *sprite) -> Value {
+                std::map<std::string, std::any> arguments; // This is intentionally a `std::map` and not a `std::unordered_map` because `std::unordered_map`s take up more memory and are faster but since there are almost always only 1 or 2 arguments the performance would be exactly the same but use more memory.
+                for (const auto &pair : block.parsedInputs) {
+                    arguments[pair.first] = Scratch::getInputValue(block, pair.first, sprite).asAny();
+                }
+
+                ExtensionData data = createExtensionData(sprite);
+
+                if (type.get<std::string>() == "int") {
+#ifdef __PC__
+                    char *error;
+                    auto customBlock = reinterpret_cast<int (*)(std::map<std::string, std::any> &, ExtensionData)>(dlsym(extension.handle, block.opcode.c_str()));
+                    if ((error = dlerror()) != NULL) {
+                        Log::logError("Failed to load function for: '" + block.opcode + "', error: " + error);
+                        return Value();
+                    }
+#elif defined(__WIIU__)
+                    int (*customBlock)(std::map<std::string, std::any> &, ExtensionData);
+                    OSDynLoad_Error error = OSDynLoad_FindExport(extension.module, OS_DYNLOAD_EXPORT_FUNC, block.opcode.c_str(), (void **)&customBlock);
+                    if (error) {
+                        Log::logError("Failed to load function for: '" + block.opcode + "', error (reference WUT): " + std::to_string(error));
+                        return Value();
+                    }
+#endif
+                    return Value(customBlock(arguments, data));
+                }
+                if (type.get<std::string>() == "bool") {
+#ifdef __PC__
+                    char *error;
+                    auto customBlock = reinterpret_cast<bool (*)(std::map<std::string, std::any> &, ExtensionData)>(dlsym(extension.handle, block.opcode.c_str()));
+                    if ((error = dlerror()) != NULL) {
+                        Log::logError("Failed to load function for: '" + block.opcode + "', error: " + error);
+                        return Value();
+                    }
+#elif defined(__WIIU__)
+                    bool (*customBlock)(std::map<std::string, std::any> &, ExtensionData);
+                    OSDynLoad_Error error = OSDynLoad_FindExport(extension.module, OS_DYNLOAD_EXPORT_FUNC, block.opcode.c_str(), (void **)&customBlock);
+                    if (error) {
+                        Log::logError("Failed to load function for: '" + block.opcode + "', error (reference WUT): " + std::to_string(error));
+                        return Value();
+                    }
+#endif
+                    return Value(customBlock(arguments, data));
+                }
+                if (type.get<std::string>() == "string") {
+#ifdef __PC__
+                    char *error;
+                    auto customBlock = reinterpret_cast<void (*)(std::map<std::string, std::any> &, std::string *, ExtensionData)>(dlsym(extension.handle, block.opcode.c_str()));
+                    if ((error = dlerror()) != NULL) {
+                        Log::logError("Failed to load function for: '" + block.opcode + "', error: " + error);
+                        return Value();
+                    }
+#elif defined(__WIIU__)
+                    void (*customBlock)(std::map<std::string, std::any> &, std::string *, ExtensionData);
+                    OSDynLoad_Error error = OSDynLoad_FindExport(extension.module, OS_DYNLOAD_EXPORT_FUNC, block.opcode.c_str(), (void **)&customBlock);
+                    if (error) {
+                        Log::logError("Failed to load function for: '" + block.opcode + "', error (reference WUT): " + std::to_string(error));
+                        return Value();
+                    }
+#endif
+                    std::string ret;
+                    customBlock(arguments, &ret, data);
+                    return Value(ret);
+                }
+                Log::logWarning("Extension block: '" + block.opcode + "' using unknown type: " + type.get<std::string>());
+                return Value();
+            };
+        }
 }
 
 std::vector<Block *> BlockExecutor::runBlock(Block &block, Sprite *sprite, bool *withoutScreenRefresh, bool fromRepeat) {
@@ -344,7 +447,7 @@ std::vector<std::pair<Block *, Sprite *>> BlockExecutor::runBroadcasts() {
         for (auto &[id, block] : currentSprite->blocks) {
             if (block.opcode == "event_whenbroadcastreceived" &&
                 block.fields["BROADCAST_OPTION"][0] == currentBroadcast) {
-                blocksToRun.push_back({&block, currentSprite});
+                blocksToRun.push_back({ &block, currentSprite });
             }
         }
     }

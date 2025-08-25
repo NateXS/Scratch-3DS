@@ -84,7 +84,7 @@ double Time::getDaysSince2000() {
     time_t now = time(NULL);
 
     // Set up struct tm for Jan 1, 2000, 00:00:00 UTC
-    struct tm start_tm = {0};
+    struct tm start_tm = { 0 };
     start_tm.tm_year = 2000 - 1900;
     start_tm.tm_mon = 0;
     start_tm.tm_mday = 1;

@@ -8,7 +8,8 @@ class TextObject3DS : public TextObject {
     void updateText();
 
   public:
-    typedef struct {
+    typedef struct
+    {
         C2D_TextBuf textBuffer;
         C2D_Font font;
         C2D_Text c2dText;

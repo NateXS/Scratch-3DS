@@ -126,10 +126,10 @@ void TextObjectSDL::render(int xPos, int yPos) {
 
 std::vector<float> TextObjectSDL::getSize() {
     if (!texture) {
-        return {0.0f, 0.0f};
+        return { 0.0f, 0.0f };
     }
 
-    return {textWidth * scale, textHeight * scale};
+    return { textWidth * scale, textHeight * scale };
 }
 
 void TextObjectSDL::setRenderer(void *r) {

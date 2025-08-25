@@ -6,6 +6,7 @@
 #include "../scratch/render.hpp"
 #include "../scratch/text.hpp"
 #include "../scratch/unzip.hpp"
+#include "extension.hpp"
 #include "image.hpp"
 #include "interpret.hpp"
 #ifdef ENABLE_AUDIO
@@ -311,6 +312,8 @@ void Render::renderSprites() {
     C2D_TargetClear(topScreenRightEye, clrWhite);
     C2D_TargetClear(bottomScreen, clrWhite);
 
+    runAllExtensionFunctions("preRender");
+
     float slider = osGet3DSliderState();
     const float depthScale = 8.0f / sprites.size();
 
@@ -416,6 +419,8 @@ void Render::renderSprites() {
         if (Render::renderMode != Render::BOTH_SCREENS)
             drawBlackBars(BOTTOM_SCREEN_WIDTH, SCREEN_HEIGHT);
     }
+
+    runAllExtensionFunctions("postRender");
 
     C2D_Flush();
     C3D_FrameEnd(0);
