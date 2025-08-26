@@ -35,7 +35,6 @@ struct ParsedInput {
 };
 
 struct Block {
-
     std::string id;
     std::string opcode;
     std::string next;

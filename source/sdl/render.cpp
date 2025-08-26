@@ -1,5 +1,6 @@
 #include "../scratch/render.hpp"
 #include "../scratch/audio.hpp"
+#include "../scratch/blocks/pen.hpp"
 #include "../scratch/unzip.hpp"
 #include "image.hpp"
 #include "interpret.hpp"
@@ -12,6 +13,7 @@
 #include <SDL2/SDL_gamecontroller.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_joystick.h>
+#include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_stdinc.h>
@@ -160,11 +162,15 @@ postAccount:
     window = SDL_CreateWindow("Scratch Runtime", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
+    penTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 480, 360); // TODO: Support other resolutions.
+
     if (SDL_NumJoysticks() > 0) controller = SDL_GameControllerOpen(0);
 
     return true;
 }
 void Render::deInit() {
+    SDL_DestroyTexture(penTexture);
+
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SoundPlayer::deinit();
