@@ -35,7 +35,6 @@ struct ParsedInput {
 };
 
 struct Block {
-
     std::string id;
     std::string opcode;
     std::string next;
@@ -172,6 +171,13 @@ class Sprite {
     std::vector<std::pair<double, double>> collisionPoints;
     int spriteWidth;
     int spriteHeight;
+
+    struct {
+        bool down;
+        double size;
+        Color color;
+        double transparency;
+    } penData;
 
     std::unordered_map<std::string, Variable> variables;
     std::unordered_map<std::string, Block> blocks;
